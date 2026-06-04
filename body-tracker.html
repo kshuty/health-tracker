@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Personal Health Log</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --surface: #181818;
+      --surface2: #222222;
+      --border: #2e2e2e;
+      --accent: #c8f542;
+      --accent2: #42f5c8;
+      --text: #f0f0f0;
+      --text-muted: #888;
+      --danger: #f54242;
+      --radius: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 24px 32px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+      line-height: 1;
+      white-space: nowrap;
+    }
+    header .subtitle {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── GEAR MENU ── */
+    .gear-wrap { position: relative; padding-bottom: 2px; }
+    .gear-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+    .gear-btn:hover { border-color: var(--accent2); color: var(--accent2); transform: rotate(30deg); }
+    .gear-btn.open { border-color: var(--accent2); color: var(--accent2); transform: rotate(60deg); }
+    .gear-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px); right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      min-width: 210px;
+      z-index: 50;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .gear-menu.open { display: block; }
+    .gear-menu-label {
+      font-size: 0.6rem;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 10px 14px 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .gear-menu-item {
+      display: block; width: 100%;
+      background: transparent; border: none;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem; letter-spacing: 1px;
+      text-align: left; padding: 10px 14px;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .gear-menu-item:hover { background: var(--surface2); color: var(--accent2); }
+    .gear-divider { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; padding: 24px 32px 0; gap: 0; }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem; letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 10px 24px;
+      cursor: pointer; transition: all 0.2s;
+      border-bottom: none;
+      border-radius: var(--radius) var(--radius) 0 0;
+      position: relative; top: 1px;
+      margin-right: -1px;
+    }
+    .tab-btn.active {
+      background: var(--surface);
+      border-color: var(--border);
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+      z-index: 1;
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); background: var(--surface2); }
+
+    /* ── PANEL ── */
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 0 var(--radius) var(--radius) var(--radius);
+      background: var(--surface);
+      margin: 0 32px;
+      padding: 28px;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── OVERVIEW TAB ── */
+    .overview-updated {
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .overview-updated strong { color: var(--accent2); }
+
+    .ov-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .ov-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .ov-card-title {
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ov-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .ov-row:last-child { border-bottom: none; }
+    .ov-label {
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .ov-value {
+      font-size: 0.92rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .ov-value.empty { color: var(--border); font-size: 0.8rem; }
+    .ov-big {
+      font-size: 1.4rem;
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .ov-big-unit { font-size: 0.8rem; color: var(--text-muted); }
+    .ov-date-sub { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 2px; }
+    .ov-empty-state {
+      text-align: center;
+      padding: 48px 0 32px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      line-height: 2;
+    }
+    .ov-empty-state span { display: block; font-size: 2.5rem; margin-bottom: 12px; }
+
+    /* ── ADD ENTRY TRIGGER ── */
+    .add-entry-trigger { margin-bottom: 22px; }
+
+    /* ── COLLAPSIBLE FORM ── */
+    .form-section {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 28px;
+      overflow: hidden;
+      max-height: 0; opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease;
+    }
+    .form-section.visible { max-height: 900px; opacity: 1; }
+    .form-section-inner { padding: 22px 24px; }
+    .form-section h2 {
+      font-size: 0.7rem; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--accent2);
+      margin-bottom: 18px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label {
+      font-size: 0.63rem; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .form-group input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.88rem;
+      padding: 9px 12px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--accent); }
+    .form-group input::placeholder { color: var(--text-muted); }
+    .form-group.full { grid-column: 1 / -1; }
+
+    /* ── STATIC SECTION ── */
+    .static-section {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 28px;
+    }
+    .static-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; cursor: pointer; user-select: none;
+    }
+    .static-header h2 {
+      font-size: 0.68rem; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .chevron { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.2s; }
+    .static-header.open .chevron { transform: rotate(180deg); }
+    .static-body {
+      padding: 0 20px; max-height: 0; overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.3s ease;
+    }
+    .static-body.open { max-height: 300px; padding: 0 20px 20px; }
+
+    /* ── BUTTONS ── */
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem; letter-spacing: 1.5px; text-transform: uppercase;
+      border: none; border-radius: 5px;
+      padding: 10px 22px; cursor: pointer; transition: all 0.18s;
+    }
+    .btn-primary { background: var(--accent); color: #0f0f0f; font-weight: 500; }
+    .btn-primary:hover { background: #d9ff60; transform: translateY(-1px); }
+    .btn-add {
+      background: transparent;
+      border: 1px dashed var(--accent); color: var(--accent);
+      font-family: 'DM Mono', monospace; font-size: 0.75rem;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      border-radius: 5px; padding: 10px 24px;
+      cursor: pointer; transition: all 0.18s;
+    }
+    .btn-add:hover { background: rgba(200,245,66,0.07); transform: translateY(-1px); }
+    .btn-add.cancel { border-style: solid; border-color: var(--text-muted); color: var(--text-muted); }
+    .btn-add.cancel:hover { border-color: var(--danger); color: var(--danger); background: transparent; }
+    .btn-danger {
+      background: transparent; border: 1px solid var(--danger); color: var(--danger);
+      font-size: 0.68rem; padding: 6px 12px;
+    }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+
+    /* ── HISTORY HEADER ── */
+    .data-controls {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .data-controls h2 {
+      font-size: 0.7rem; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    thead tr { border-bottom: 2px solid var(--border); }
+    thead th {
+      text-align: left; padding: 8px 12px;
+      font-size: 0.62rem; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:hover { background: var(--surface2); }
+    tbody tr:first-child td { color: var(--accent); }
+    tbody td { padding: 10px 12px; white-space: nowrap; }
+    tbody td:first-child { color: var(--text-muted); font-size: 0.75rem; }
+    .badge-new {
+      background: var(--accent); color: #0f0f0f;
+      font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase;
+      border-radius: 3px; padding: 2px 6px; margin-left: 6px; vertical-align: middle;
+    }
+    .empty-state {
+      text-align: center; padding: 42px 0;
+      color: var(--text-muted); font-size: 0.82rem; letter-spacing: 1px;
+    }
+    .empty-state span { display: block; font-size: 2rem; margin-bottom: 10px; }
+
+    /* ── IMPORT MODAL ── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.78); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      max-width: 500px; width: 90%;
+    }
+    .modal h3 {
+      font-size: 0.72rem; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--accent2); margin-bottom: 14px;
+    }
+    .modal textarea {
+      width: 100%; height: 160px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 5px; color: var(--text);
+      font-family: 'DM Mono', monospace; font-size: 0.78rem;
+      padding: 10px; resize: vertical; outline: none;
+    }
+    .modal textarea:focus { border-color: var(--accent); }
+    .modal p { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.6; }
+    .error-msg { color: var(--danger); font-size: 0.72rem; margin-top: 6px; min-height: 18px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--accent); color: #0f0f0f;
+      font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 1px;
+      padding: 12px 20px; border-radius: var(--radius);
+      opacity: 0; pointer-events: none;
+      transform: translateY(8px); transition: all 0.3s; z-index: 200;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 600px) {
+      header { padding: 16px; }
+      .tabs { padding: 18px 16px 0; }
+      .tab-btn { padding: 10px 14px; font-size: 0.68rem; letter-spacing: 1px; }
+      .panel { margin: 0 16px; padding: 18px; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .ov-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Personal Health Log</h1>
+    <span class="subtitle">Body &amp; Weight Tracker</span>
+  </div>
+  <div class="gear-wrap" id="gear-wrap">
+    <button class="gear-btn" id="gear-btn" onclick="toggleGear()" title="Import / Export">⚙</button>
+    <div class="gear-menu" id="gear-menu">
+      <div class="gear-menu-label">Measurements</div>
+      <button class="gear-menu-item" onclick="openImport('measurements'); closeGear()">↑ Import CSV</button>
+      <button class="gear-menu-item" onclick="exportCSV('measurements'); closeGear()">↓ Export CSV</button>
+      <hr class="gear-divider"/>
+      <div class="gear-menu-label">Weight</div>
+      <button class="gear-menu-item" onclick="openImport('weight'); closeGear()">↑ Import CSV</button>
+      <button class="gear-menu-item" onclick="exportCSV('weight'); closeGear()">↓ Export CSV</button>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tab-btn-overview"      onclick="switchTab('overview')">Overview</button>
+  <button class="tab-btn"        id="tab-btn-measurements"  onclick="switchTab('measurements')">Measurements</button>
+  <button class="tab-btn"        id="tab-btn-weight"        onclick="switchTab('weight')">Weight</button>
+</div>
+
+<div class="panel">
+
+  <!-- ════════════════════════════════════════
+       OVERVIEW TAB
+  ════════════════════════════════════════ -->
+  <div class="tab-content active" id="tab-overview">
+    <div id="ov-content"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       MEASUREMENTS TAB
+  ════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-measurements">
+
+    <div class="add-entry-trigger">
+      <button class="btn-add" id="m-add-btn" onclick="toggleMeasurementForm()">+ New Entry</button>
+    </div>
+
+    <div class="form-section" id="m-form-section">
+      <div class="form-section-inner">
+        <h2>New Measurement Entry</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="m-date"/>
+          </div>
+          <div class="form-group">
+            <label>Neck (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 14.0" id="m-neck"/>
+          </div>
+          <div class="form-group">
+            <label>Shoulders (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 45.0" id="m-shoulders"/>
+          </div>
+          <div class="form-group">
+            <label>Bust (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 36.0" id="m-bust"/>
+          </div>
+          <div class="form-group">
+            <label>Under Bust (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 30.0" id="m-underbust"/>
+          </div>
+          <div class="form-group">
+            <label>Bicep L (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 12.0" id="m-bicep-l"/>
+          </div>
+          <div class="form-group">
+            <label>Bicep R (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 12.0" id="m-bicep-r"/>
+          </div>
+          <div class="form-group">
+            <label>Waist (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 28.0" id="m-waist"/>
+          </div>
+          <div class="form-group">
+            <label>Hips (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 38.0" id="m-hips"/>
+          </div>
+          <div class="form-group">
+            <label>Thigh L (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 22.0" id="m-thigh-l"/>
+          </div>
+          <div class="form-group">
+            <label>Thigh R (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 22.0" id="m-thigh-r"/>
+          </div>
+          <div class="form-group">
+            <label>Calf L (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 14.0" id="m-calf-l"/>
+          </div>
+          <div class="form-group">
+            <label>Calf R (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 14.0" id="m-calf-r"/>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="addMeasurement()">Save Entry</button>
+          <button class="btn-add cancel" onclick="toggleMeasurementForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Static / rarely-changing -->
+    <div class="static-section">
+      <div class="static-header" id="static-header" onclick="toggleStatic()">
+        <h2>📐 Static Measurements — Head · Inseam · Feet</h2>
+        <span class="chevron" id="static-chevron">▼</span>
+      </div>
+      <div class="static-body" id="static-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Head Circumference (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 22.5" id="s-head"/>
+          </div>
+          <div class="form-group">
+            <label>Inseam (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 30.0" id="s-inseam"/>
+          </div>
+          <div class="form-group">
+            <label>Foot Length (in)</label>
+            <input type="number" step="0.1" placeholder="e.g. 10.0" id="s-foot"/>
+          </div>
+          <div class="form-group">
+            <label>Shoe Size (US)</label>
+            <input type="number" step="0.5" placeholder="e.g. 8.5" id="s-shoe"/>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveStatic()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="data-controls"><h2>History</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Neck</th><th>Shoulders</th><th>Bust</th><th>Under Bust</th>
+          <th>Bicep L</th><th>Bicep R</th><th>Waist</th><th>Hips</th>
+          <th>Thigh L</th><th>Thigh R</th><th>Calf L</th><th>Calf R</th><th></th>
+        </tr></thead>
+        <tbody id="measurements-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       WEIGHT TAB
+  ════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-weight">
+
+    <div class="add-entry-trigger">
+      <button class="btn-add" id="w-add-btn" onclick="toggleWeightForm()">+ New Entry</button>
+    </div>
+
+    <div class="form-section" id="w-form-section">
+      <div class="form-section-inner">
+        <h2>New Weight Entry</h2>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="w-date"/>
+          </div>
+          <div class="form-group">
+            <label>Weight (lbs)</label>
+            <input type="number" step="0.1" placeholder="e.g. 145.0" id="w-weight"/>
+          </div>
+          <div class="form-group">
+            <label>Time of Day</label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="number" id="w-hour" min="1" max="12" placeholder="HH"
+                style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.88rem;padding:9px 10px;outline:none;width:62px;-moz-appearance:textfield;"
+                oninput="if(this.value>12)this.value=12;if(this.value<1&&this.value!='')this.value=1"/>
+              <span style="color:var(--text-muted);font-size:1.1rem;line-height:1;">:</span>
+              <input type="number" id="w-min" min="0" max="59" placeholder="MM"
+                style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.88rem;padding:9px 10px;outline:none;width:62px;-moz-appearance:textfield;"
+                oninput="if(this.value>59)this.value=59;if(this.value<0)this.value=0"/>
+              <select id="w-ampm"
+                style="background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.88rem;padding:9px 10px;outline:none;cursor:pointer;">
+                <option value="">—</option>
+                <option selected>AM</option>
+                <option>PM</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="addWeight()">Save Entry</button>
+          <button class="btn-add cancel" onclick="toggleWeightForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="data-controls"><h2>History</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Date</th><th>Weight (lbs)</th><th>Time</th><th></th>
+        </tr></thead>
+        <tbody id="weight-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /panel -->
+
+<!-- IMPORT MODAL -->
+<div class="modal-backdrop" id="import-modal">
+  <div class="modal">
+    <h3>Import CSV</h3>
+    <p id="import-hint"></p>
+    <textarea id="import-textarea" placeholder="Paste CSV data here…"></textarea>
+    <div class="error-msg" id="import-error"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="doImport()">Import</button>
+      <button class="btn-add cancel" onclick="closeImport()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── STORAGE ──────────────────────────────────────────────────────────────
+  const KEYS = { measurements: 'bt_measurements', weight: 'bt_weight', static: 'bt_static' };
+  const load    = k => { try { return JSON.parse(localStorage.getItem(KEYS[k])) || []; } catch { return []; } };
+  const loadObj = k => { try { return JSON.parse(localStorage.getItem(KEYS[k])) || {}; } catch { return {}; } };
+  const save    = (k, v) => localStorage.setItem(KEYS[k], JSON.stringify(v));
+
+  // ── GEAR ─────────────────────────────────────────────────────────────────
+  function toggleGear() {
+    document.getElementById('gear-btn').classList.toggle('open');
+    document.getElementById('gear-menu').classList.toggle('open');
+  }
+  function closeGear() {
+    document.getElementById('gear-btn').classList.remove('open');
+    document.getElementById('gear-menu').classList.remove('open');
+  }
+  document.addEventListener('click', e => {
+    if (!document.getElementById('gear-wrap').contains(e.target)) closeGear();
+  });
+
+  // ── TABS ─────────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tab-btn-' + tab).classList.add('active');
+    if (tab === 'overview') renderOverview();
+  }
+
+  // ── OVERVIEW ─────────────────────────────────────────────────────────────
+  // Walks all measurement entries to find the most recent non-empty value
+  // for each field, tracking which date that value came from.
+  function getLatestValues() {
+    const data = load('measurements');
+    const fields = ['neck','shoulders','bust','underbust','bicep-l','bicep-r',
+                    'waist','hips','thigh-l','thigh-r','calf-l','calf-r'];
+    const result = {};
+    // data is sorted newest-first
+    for (const row of data) {
+      for (const f of fields) {
+        if (!result[f] && row[f]) result[f] = { value: row[f], date: row.date };
+      }
+      if (Object.keys(result).length === fields.length) break;
+    }
+    return result;
+  }
+
+  function renderOverview() {
+    const mData = load('measurements');
+    const wData = load('weight');
+    const sData = loadObj('static');
+    const el    = document.getElementById('ov-content');
+
+    const hasAnything = mData.length || wData.length ||
+      sData.head || sData.inseam || sData.foot || sData.shoe;
+
+    if (!hasAnything) {
+      el.innerHTML = `
+        <div class="ov-empty-state">
+          <span>✨</span>
+          Nothing tracked yet.<br>
+          Head to the <strong>Measurements</strong> or <strong>Weight</strong> tabs to add your first entry.
+        </div>`;
+      return;
+    }
+
+    // Most recent entry date across both trackers
+    const mLatestDate = mData.length ? mData[0].date : null;
+    const wLatestDate = wData.length ? wData[0].date : null;
+    let overallLatest = null;
+    if (mLatestDate && wLatestDate) overallLatest = mLatestDate > wLatestDate ? mLatestDate : wLatestDate;
+    else overallLatest = mLatestDate || wLatestDate;
+
+    const latest = getLatestValues();
+    const val = (f) => latest[f] ? latest[f].value : null;
+    const v   = (f, unit = ' in') => val(f) ? `${val(f)}${unit}` : `<span class="ov-value empty">—</span>`;
+
+    // Latest weight entry
+    const latestW = wData.length ? wData[0] : null;
+
+    let html = '';
+
+    // Updated timestamp
+    html += `<div class="overview-updated">Last updated: <strong>${overallLatest ? formatDate(overallLatest) : '—'}</strong></div>`;
+
+    // Weight hero card
+    html += `<div class="ov-grid">`;
+
+    if (latestW) {
+      html += `
+        <div class="ov-card">
+          <div class="ov-card-title">⚖️ Current Weight</div>
+          <div class="ov-big">${latestW.weight} <span class="ov-big-unit">lbs</span></div>
+          <div class="ov-date-sub">Logged ${formatDate(latestW.date)}${latestW.time ? ' · ' + latestW.time : ''}</div>
+        </div>`;
+    }
+
+    // Torso card
+    html += `
+      <div class="ov-card">
+        <div class="ov-card-title">👗 Torso</div>
+        <div class="ov-row"><span class="ov-label">Neck</span>      <span class="ov-value">${v('neck')}</span></div>
+        <div class="ov-row"><span class="ov-label">Shoulders</span> <span class="ov-value">${v('shoulders')}</span></div>
+        <div class="ov-row"><span class="ov-label">Bust</span>      <span class="ov-value">${v('bust')}</span></div>
+        <div class="ov-row"><span class="ov-label">Under Bust</span><span class="ov-value">${v('underbust')}</span></div>
+        <div class="ov-row"><span class="ov-label">Waist</span>     <span class="ov-value">${v('waist')}</span></div>
+        <div class="ov-row"><span class="ov-label">Hips</span>      <span class="ov-value">${v('hips')}</span></div>
+      </div>`;
+
+    // Arms & Legs card
+    html += `
+      <div class="ov-card">
+        <div class="ov-card-title">💪 Arms &amp; Legs</div>
+        <div class="ov-row"><span class="ov-label">Bicep L</span>  <span class="ov-value">${v('bicep-l')}</span></div>
+        <div class="ov-row"><span class="ov-label">Bicep R</span>  <span class="ov-value">${v('bicep-r')}</span></div>
+        <div class="ov-row"><span class="ov-label">Thigh L</span>  <span class="ov-value">${v('thigh-l')}</span></div>
+        <div class="ov-row"><span class="ov-label">Thigh R</span>  <span class="ov-value">${v('thigh-r')}</span></div>
+        <div class="ov-row"><span class="ov-label">Calf L</span>   <span class="ov-value">${v('calf-l')}</span></div>
+        <div class="ov-row"><span class="ov-label">Calf R</span>   <span class="ov-value">${v('calf-r')}</span></div>
+      </div>`;
+
+    // Static card (only if any value saved)
+    if (sData.head || sData.inseam || sData.foot || sData.shoe) {
+      html += `
+        <div class="ov-card">
+          <div class="ov-card-title">📐 Static</div>
+          ${sData.head   ? `<div class="ov-row"><span class="ov-label">Head</span>  <span class="ov-value">${sData.head} in</span></div>` : ''}
+          ${sData.inseam ? `<div class="ov-row"><span class="ov-label">Inseam</span><span class="ov-value">${sData.inseam} in</span></div>` : ''}
+          ${sData.foot   ? `<div class="ov-row"><span class="ov-label">Foot</span>  <span class="ov-value">${sData.foot} in</span></div>` : ''}
+          ${sData.shoe   ? `<div class="ov-row"><span class="ov-label">Shoe (US)</span><span class="ov-value">${sData.shoe}</span></div>` : ''}
+        </div>`;
+    }
+
+    html += `</div>`; // /ov-grid
+    el.innerHTML = html;
+  }
+
+  // ── MEASUREMENTS ─────────────────────────────────────────────────────────
+  const M_FIELDS  = ['neck','shoulders','bust','underbust','bicep-l','bicep-r',
+                     'waist','hips','thigh-l','thigh-r','calf-l','calf-r'];
+  const M_HEADERS = ['Date','Neck','Shoulders','Bust','Under Bust',
+                     'Bicep L','Bicep R','Waist','Hips','Thigh L','Thigh R','Calf L','Calf R'];
+
+  let mFormOpen = false;
+  function toggleMeasurementForm() {
+    mFormOpen = !mFormOpen;
+    const sec = document.getElementById('m-form-section');
+    const btn = document.getElementById('m-add-btn');
+    sec.classList.toggle('visible', mFormOpen);
+    if (mFormOpen) {
+      btn.textContent = '− Cancel'; btn.classList.add('cancel');
+      document.getElementById('m-date').value = today();
+    } else {
+      btn.textContent = '+ New Entry'; btn.classList.remove('cancel');
+      clearMeasurementForm();
+    }
+  }
+
+  function addMeasurement() {
+    const date = document.getElementById('m-date').value;
+    if (!date) { showToast('Please enter a date.', true); return; }
+    const row = { date };
+    M_FIELDS.forEach(f => row[f] = document.getElementById('m-' + f).value || '');
+    const data = load('measurements');
+    data.unshift(row);
+    data.sort((a, b) => b.date.localeCompare(a.date));
+    save('measurements', data);
+    renderMeasurements();
+    mFormOpen = true; toggleMeasurementForm();
+    showToast('Measurement entry saved.');
+  }
+
+  function clearMeasurementForm() {
+    M_FIELDS.forEach(f => { const el = document.getElementById('m-' + f); if (el) el.value = ''; });
+    const d = document.getElementById('m-date'); if (d) d.value = today();
+  }
+
+  function deleteMeasurement(idx) {
+    const data = load('measurements');
+    data.splice(idx, 1);
+    save('measurements', data);
+    renderMeasurements();
+    showToast('Entry deleted.');
+  }
+
+  function renderMeasurements() {
+    const data  = load('measurements');
+    const tbody = document.getElementById('measurements-body');
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><span>📏</span>No measurements yet.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.map((row, i) => `
+      <tr>
+        <td>${formatDate(row.date)}${i === 0 ? '<span class="badge-new">new</span>' : ''}</td>
+        ${M_FIELDS.map(f => `<td>${row[f] || '—'}</td>`).join('')}
+        <td><button class="btn btn-danger" onclick="deleteMeasurement(${i})">✕</button></td>
+      </tr>`).join('');
+  }
+
+  // ── STATIC ───────────────────────────────────────────────────────────────
+  let staticOpen = false;
+  function toggleStatic() {
+    staticOpen = !staticOpen;
+    document.getElementById('static-body').classList.toggle('open', staticOpen);
+    document.getElementById('static-header').classList.toggle('open', staticOpen);
+  }
+  function saveStatic() {
+    const data = {
+      head:   document.getElementById('s-head').value   || '',
+      inseam: document.getElementById('s-inseam').value || '',
+      foot:   document.getElementById('s-foot').value   || '',
+      shoe:   document.getElementById('s-shoe').value   || ''
+    };
+    save('static', data);
+    showToast('Static measurements saved.');
+    renderOverview();
+  }
+  function loadStatic() {
+    const data = loadObj('static');
+    if (data.head)   document.getElementById('s-head').value   = data.head;
+    if (data.inseam) document.getElementById('s-inseam').value = data.inseam;
+    if (data.foot)   document.getElementById('s-foot').value   = data.foot;
+    if (data.shoe)   document.getElementById('s-shoe').value   = data.shoe;
+  }
+
+  // ── WEIGHT ───────────────────────────────────────────────────────────────
+  let wFormOpen = false;
+  function toggleWeightForm() {
+    wFormOpen = !wFormOpen;
+    const sec = document.getElementById('w-form-section');
+    const btn = document.getElementById('w-add-btn');
+    sec.classList.toggle('visible', wFormOpen);
+    if (wFormOpen) {
+      btn.textContent = '− Cancel'; btn.classList.add('cancel');
+      document.getElementById('w-date').value = today();
+    } else {
+      btn.textContent = '+ New Entry'; btn.classList.remove('cancel');
+      clearWeightForm();
+    }
+  }
+
+  function addWeight() {
+    const date = document.getElementById('w-date').value;
+    if (!date) { showToast('Please enter a date.', true); return; }
+    const weight = document.getElementById('w-weight').value;
+    if (!weight) { showToast('Please enter a weight.', true); return; }
+    const hr   = document.getElementById('w-hour').value;
+    const mn   = document.getElementById('w-min').value;
+    const ampm = document.getElementById('w-ampm').value;
+    const minPad = mn !== '' ? String(mn).padStart(2,'0') : '';
+    const time = (hr && mn !== '' && ampm) ? hr + ':' + minPad + ' ' + ampm : '';
+    const row = { date, weight: parseFloat(weight).toFixed(1), time };
+    const data = load('weight');
+    data.unshift(row);
+    data.sort((a, b) => b.date.localeCompare(a.date));
+    save('weight', data);
+    renderWeight();
+    wFormOpen = true; toggleWeightForm();
+    showToast('Weight entry saved.');
+  }
+
+  function clearWeightForm() {
+    const d = document.getElementById('w-date');   if (d) d.value = today();
+    const w = document.getElementById('w-weight'); if (w) w.value = '';
+    const th = document.getElementById('w-hour');  if (th) th.value = '';
+    const tm = document.getElementById('w-min');   if (tm) tm.value = '';
+    const ta = document.getElementById('w-ampm');  if (ta) ta.value = '';
+  }
+
+  function deleteWeight(idx) {
+    const data = load('weight');
+    data.splice(idx, 1);
+    save('weight', data);
+    renderWeight();
+    showToast('Entry deleted.');
+  }
+
+  function renderWeight() {
+    const data  = load('weight');
+    const tbody = document.getElementById('weight-body');
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span>⚖️</span>No weight entries yet.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.map((row, i) => `
+      <tr>
+        <td>${formatDate(row.date)}${i === 0 ? '<span class="badge-new">new</span>' : ''}</td>
+        <td>${row.weight} lbs</td>
+        <td>${row.time || '—'}</td>
+        <td><button class="btn btn-danger" onclick="deleteWeight(${i})">✕</button></td>
+      </tr>`).join('');
+  }
+
+  // ── EXPORT ───────────────────────────────────────────────────────────────
+  function exportCSV(type) {
+    const data = load(type);
+    if (!data.length) { showToast('No data to export.', true); return; }
+    let csv, filename;
+    if (type === 'measurements') {
+      csv = M_HEADERS.join(',') + '\n' + data.map(r =>
+        [r.date, r.neck, r.shoulders, r.bust, r.underbust,
+         r['bicep-l'], r['bicep-r'], r.waist, r.hips,
+         r['thigh-l'], r['thigh-r'], r['calf-l'], r['calf-r']]
+        .map(v => `"${v || ''}"`).join(',')
+      ).join('\n');
+      filename = 'measurements.csv';
+    } else {
+      csv = 'Date,Weight (lbs),Time\n' + data.map(r =>
+        [r.date, r.weight, r.time].map(v => `"${v || ''}"`).join(',')
+      ).join('\n');
+      filename = 'weight.csv';
+    }
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported.');
+  }
+
+  // ── IMPORT ───────────────────────────────────────────────────────────────
+  let importTarget = null;
+
+  function openImport(type) {
+    importTarget = type;
+    document.getElementById('import-error').textContent    = '';
+    document.getElementById('import-textarea').value       = '';
+    document.getElementById('import-hint').textContent =
+      type === 'measurements'
+        ? 'Expected columns: ' + M_HEADERS.join(', ')
+        : 'Expected columns: Date, Weight (lbs), Time';
+    document.getElementById('import-modal').classList.add('open');
+  }
+
+  function closeImport() {
+    document.getElementById('import-modal').classList.remove('open');
+    importTarget = null;
+  }
+
+  function doImport() {
+    const raw = document.getElementById('import-textarea').value.trim();
+    if (!raw) { document.getElementById('import-error').textContent = 'Please paste CSV data.'; return; }
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) { document.getElementById('import-error').textContent = 'Need a header row + at least one data row.'; return; }
+    const parseRow = line => line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    const rows = [];
+    try {
+      for (let i = 1; i < lines.length; i++) {
+        const c = parseRow(lines[i]);
+        if (importTarget === 'measurements') {
+          rows.push({ date: c[0]||'', neck: c[1]||'', shoulders: c[2]||'',
+            bust: c[3]||'', underbust: c[4]||'',
+            'bicep-l': c[5]||'', 'bicep-r': c[6]||'',
+            waist: c[7]||'', hips: c[8]||'',
+            'thigh-l': c[9]||'', 'thigh-r': c[10]||'',
+            'calf-l': c[11]||'', 'calf-r': c[12]||'' });
+        } else {
+          rows.push({ date: c[0]||'', weight: c[1]||'', time: c[2]||'' });
+        }
+      }
+    } catch {
+      document.getElementById('import-error').textContent = 'Failed to parse CSV. Check formatting.'; return;
+    }
+    const existing     = load(importTarget);
+    const existingDates = new Set(existing.map(r => r.date));
+    const newRows      = rows.filter(r => !existingDates.has(r.date));
+    const merged       = [...newRows, ...existing].sort((a, b) => b.date.localeCompare(a.date));
+    save(importTarget, merged);
+    if (importTarget === 'measurements') renderMeasurements(); else renderWeight();
+    closeImport();
+    showToast(`Imported ${newRows.length} new row(s).`);
+  }
+
+  document.getElementById('import-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeImport();
+  });
+
+  // ── UTILS ─────────────────────────────────────────────────────────────────
+  const today = () => new Date().toISOString().split('T')[0];
+
+  function formatDate(d) {
+    if (!d) return '—';
+    const [y, m, day] = d.split('-');
+    return `${m}/${day}/${y}`;
+  }
+
+  function formatTime(t) {
+    // Accepts HH:MM or HH:MM:SS, returns h:MM AM/PM
+    if (!t) return '';
+    const [hh, mm] = t.split(':').map(Number);
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    const h    = hh % 12 || 12;
+    return `${h}:${String(mm).padStart(2,'0')} ${ampm}`;
+  }
+
+  let toastTimer;
+  function showToast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent    = msg;
+    el.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+    el.style.color    = isError ? '#fff' : '#0f0f0f';
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  renderOverview();
+  renderMeasurements();
+  renderWeight();
+  loadStatic();
+</script>
+</body>
+</html>
