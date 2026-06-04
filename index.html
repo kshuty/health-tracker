@@ -398,12 +398,12 @@
     <button class="gear-btn" id="gear-btn" onclick="toggleGear()" title="Import / Export">⚙</button>
     <div class="gear-menu" id="gear-menu">
       <div class="gear-menu-label">Measurements</div>
-      <button class="gear-menu-item" onclick="openImport('measurements'); closeGear()">↑ Import CSV</button>
-      <button class="gear-menu-item" onclick="exportCSV('measurements'); closeGear()">↓ Export CSV</button>
+      <button class="gear-menu-item" onclick="event.stopPropagation(); closeGear(); openImport('measurements');">↑ Import CSV</button>
+      <button class="gear-menu-item" onclick="event.stopPropagation(); closeGear(); exportCSV('measurements');">↓ Export CSV</button>
       <hr class="gear-divider"/>
       <div class="gear-menu-label">Weight</div>
-      <button class="gear-menu-item" onclick="openImport('weight'); closeGear()">↑ Import CSV</button>
-      <button class="gear-menu-item" onclick="exportCSV('weight'); closeGear()">↓ Export CSV</button>
+      <button class="gear-menu-item" onclick="event.stopPropagation(); closeGear(); openImport('weight');">↑ Import CSV</button>
+      <button class="gear-menu-item" onclick="event.stopPropagation(); closeGear(); exportCSV('weight');">↓ Export CSV</button>
     </div>
   </div>
 </header>
@@ -932,8 +932,10 @@
     const blob = new Blob([csv], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    setTimeout(() => { a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }, 50);
     showToast('CSV exported.');
   }
 
@@ -992,6 +994,9 @@
 
   document.getElementById('import-modal').addEventListener('click', function(e) {
     if (e.target === this) closeImport();
+  });
+  document.querySelector('#import-modal .modal').addEventListener('click', function(e) {
+    e.stopPropagation();
   });
 
   // ── UTILS ─────────────────────────────────────────────────────────────────
