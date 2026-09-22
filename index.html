@@ -21,12 +21,15 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { overflow-x: hidden; max-width: 100%; }
+
     body {
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Mono', monospace;
       min-height: 100vh;
       padding: 0 0 60px;
+      width: 100%;
     }
 
     /* ── HEADER ── */
@@ -378,12 +381,63 @@
     #toast.show { opacity: 1; transform: translateY(0); }
 
     @media (max-width: 600px) {
-      header { padding: 16px; }
-      .tabs { padding: 18px 16px 0; }
-      .tab-btn { padding: 10px 14px; font-size: 0.68rem; letter-spacing: 1px; }
-      .panel { margin: 0 16px; padding: 18px; }
-      .form-grid { grid-template-columns: 1fr 1fr; }
+      header { padding: 14px 16px; flex-wrap: wrap; row-gap: 10px; }
+      header h1 { font-size: 1.25rem; white-space: normal; }
+      header .subtitle { white-space: normal; letter-spacing: 1.5px; }
+      .tabs { padding: 14px 12px 0; gap: 0; }
+      .tab-btn { padding: 9px 12px; font-size: 0.64rem; letter-spacing: 0.5px; }
+      .panel { margin: 0 12px; padding: 14px; }
+      .form-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
       .ov-grid { grid-template-columns: 1fr; }
+      .ov-card { padding: 14px 16px; }
+    }
+
+    /* ── RESPONSIVE TABLE → STACKED CARDS ── */
+    @media (max-width: 640px) {
+      .table-wrap { overflow-x: visible; }
+      table { display: block; width: 100%; }
+      thead { display: none; }
+      tbody { display: block; }
+      tbody tr {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        margin-bottom: 10px;
+        background: var(--surface2);
+        overflow: hidden;
+      }
+      tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        white-space: normal;
+        text-align: right;
+      }
+      tbody td:last-child { border-bottom: none; }
+      tbody td::before {
+        content: attr(data-label);
+        font-size: 0.6rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      tbody td:first-child {
+        background: rgba(255,255,255,0.03);
+        font-size: 0.85rem !important;
+        justify-content: flex-start;
+      }
+      tbody td:first-child::before { content: none; }
+      tbody td:last-child::before { content: none; }
+      tbody td:last-child { justify-content: center; }
+      tbody td.empty-td {
+        display: block;
+        text-align: center;
+        background: transparent;
+      }
     }
   </style>
 </head>
@@ -805,13 +859,13 @@
     const data  = load('measurements');
     const tbody = document.getElementById('measurements-body');
     if (!data.length) {
-      tbody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><span>📏</span>No measurements yet.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td class="empty-td" colspan="14"><div class="empty-state"><span>📏</span>No measurements yet.</div></td></tr>`;
       return;
     }
     tbody.innerHTML = data.map((row, i) => `
       <tr>
         <td>${formatDate(row.date)}${i === 0 ? '<span class="badge-new">new</span>' : ''}</td>
-        ${M_FIELDS.map(f => `<td>${row[f] || '—'}</td>`).join('')}
+        ${M_FIELDS.map((f, idx) => `<td data-label="${M_HEADERS[idx + 1]}">${row[f] || '—'}</td>`).join('')}
         <td><button class="btn btn-danger" onclick="deleteMeasurement(${i})">✕</button></td>
       </tr>`).join('');
   }
@@ -898,14 +952,14 @@
     const data  = load('weight');
     const tbody = document.getElementById('weight-body');
     if (!data.length) {
-      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span>⚖️</span>No weight entries yet.</div></td></tr>`;
+      tbody.innerHTML = `<tr><td class="empty-td" colspan="4"><div class="empty-state"><span>⚖️</span>No weight entries yet.</div></td></tr>`;
       return;
     }
     tbody.innerHTML = data.map((row, i) => `
       <tr>
         <td>${formatDate(row.date)}${i === 0 ? '<span class="badge-new">new</span>' : ''}</td>
-        <td>${row.weight} lbs</td>
-        <td>${row.time || '—'}</td>
+        <td data-label="Weight">${row.weight} lbs</td>
+        <td data-label="Time">${row.time || '—'}</td>
         <td><button class="btn btn-danger" onclick="deleteWeight(${i})">✕</button></td>
       </tr>`).join('');
   }
