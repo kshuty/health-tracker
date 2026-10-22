@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Personal Health Log</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet"/>
   <style>
@@ -21,7 +21,8 @@
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body { overflow-x: hidden; max-width: 100%; }
+    html { overflow-x: hidden; max-width: 100%; }
+    body { overflow-x: clip; max-width: 100%; }
 
     body {
       background: var(--bg);
@@ -222,11 +223,9 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       margin-bottom: 28px;
-      overflow: hidden;
-      max-height: 0; opacity: 0;
-      transition: max-height 0.4s ease, opacity 0.3s ease;
+      display: none;
     }
-    .form-section.visible { max-height: 900px; opacity: 1; }
+    .form-section.visible { display: block; }
     .form-section-inner { padding: 22px 24px; }
     .form-section h2 {
       font-size: 0.7rem; letter-spacing: 3px;
@@ -380,7 +379,19 @@
     }
     #toast.show { opacity: 1; transform: translateY(0); }
 
+    .form-hint { font-size: 0.68rem; color: var(--text-muted); line-height: 1.6; margin: -8px 0 16px; }
+    .form-section .btn-row {
+      position: sticky; bottom: 0; z-index: 5;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      margin: 18px -24px -22px;
+      padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
+      flex-direction: row; flex-wrap: nowrap;
+    }
+    .form-section .btn-row .btn, .form-section .btn-row .btn-add { flex: 1; width: auto; text-align: center; }
+
     @media (max-width: 600px) {
+      .form-section .btn-row { margin: 18px -16px -16px; padding-left: 16px; padding-right: 16px; }
       header { padding: 14px 16px; flex-wrap: wrap; row-gap: 10px; }
       header h1 { font-size: 1.25rem; white-space: normal; }
       header .subtitle { white-space: normal; letter-spacing: 1.5px; }
@@ -393,6 +404,7 @@
       .form-group input, .form-group select { font-size: 1rem; padding: 10px 12px; }
       .btn-row { flex-direction: column; }
       .btn-row .btn, .btn-row .btn-add { width: 100%; text-align: center; }
+      .form-section .btn-row { flex-direction: row; }
       #w-hour, #w-min { width: 0 !important; flex: 1 1 0 !important; min-width: 0; }
       #w-ampm { flex: 1 1 0; min-width: 0; }
       .ov-grid { grid-template-columns: 1fr; }
@@ -496,6 +508,7 @@
     <div class="form-section" id="m-form-section">
       <div class="form-section-inner">
         <h2>New Measurement Entry</h2>
+        <p class="form-hint">Leave a box empty to keep its last saved value.</p>
         <div class="form-grid">
           <div class="form-group">
             <label>Date</label>
@@ -829,18 +842,40 @@
     if (mFormOpen) {
       btn.textContent = '− Cancel'; btn.classList.add('cancel');
       document.getElementById('m-date').value = today();
+      updateMeasurementPlaceholders();
     } else {
       btn.textContent = '+ New Entry'; btn.classList.remove('cancel');
       clearMeasurementForm();
     }
   }
 
+  function priorValue(data, f, date) {
+    // most recent saved value for this field on or before the entry date
+    const row = data.find(r => r.date <= date && r[f]);
+    return row ? row[f] : '';
+  }
+
+  function updateMeasurementPlaceholders() {
+    const latest = getLatestValues();
+    M_FIELDS.forEach(f => {
+      const el = document.getElementById('m-' + f);
+      if (!el.dataset.ph) el.dataset.ph = el.placeholder;
+      el.placeholder = latest[f] ? 'last: ' + latest[f].value : el.dataset.ph;
+    });
+  }
+
   function addMeasurement() {
     const date = document.getElementById('m-date').value;
     if (!date) { showToast('Please enter a date.', true); return; }
+    const entered = {};
+    M_FIELDS.forEach(f => entered[f] = document.getElementById('m-' + f).value || '');
+    if (!M_FIELDS.some(f => entered[f])) { showToast('Fill in at least one measurement.', true); return; }
+    let data = load('measurements');
+    const same = data.find(r => r.date === date) || {};
     const row = { date };
-    M_FIELDS.forEach(f => row[f] = document.getElementById('m-' + f).value || '');
-    const data = load('measurements');
+    // blank boxes keep the same-day value, else the most recent earlier value
+    M_FIELDS.forEach(f => row[f] = entered[f] || same[f] || priorValue(data, f, date));
+    data = data.filter(r => r.date !== date);
     data.unshift(row);
     data.sort((a, b) => b.date.localeCompare(a.date));
     save('measurements', data);
